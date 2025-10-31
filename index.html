@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz O'Tacos - Groupe AMAUH</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const Shuffle = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>;
+        const Plus = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>;
+        const Edit2 = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>;
+        const Trash2 = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+        const Download = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>;
+        const Upload = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>;
+        const CheckCircle = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+        const XCircle = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>;
+        const User = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+        const MapPin = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>;
+
+        const QuizApp = () => {
+            const initialQuestions = [
+                { question: "Quelle est la température minimale requise pour le lavage des mains ?", options: ["38 degrés", "25 degrés", "42 degrés", "50 degrés"], answer: "38 degrés" },
+                { question: "Qu'est-ce qui est strictement interdit en cuisine ?", options: ["Torchons et éponges", "Ustensiles en plastique", "Serviettes en papier", "Crayons alimentaires"], answer: "Torchons et éponges" },
+                { question: "Quelle est la taille maximale du O'tacos ?", options: ["M", "L", "XL", "Gigatacos"], answer: "Gigatacos" },
+                { question: "Taux de composés polaires maximum dans l'huile ?", options: ["23%", "14%", "10%", "30%"], answer: "23%" },
+                { question: "Contrôle température chambres froides par jour ?", options: ["Une fois", "Deux fois", "Trois fois", "Toutes les heures"], answer: "Deux fois" },
+                { question: "Temps maximum conservation produit décongelé ?", options: ["24 heures", "48 heures", "72 heures", "96 heures"], answer: "72 heures" },
+                { question: "Ingrédient unique dans les O'tacos ?", options: ["Sauce barbecue", "Sauce fromagère", "Moutarde", "Sauce ketchup"], answer: "Sauce fromagère" },
+                { question: "Délai maximal entre commande et livraison ?", options: ["2 minutes", "4 minutes", "6 minutes", "8 minutes"], answer: "4 minutes" },
+                { question: "Comment étiqueter après décongélation ?", options: ["Date étiquetage", "Date limite uniquement", "Date et heure décongélation et fin", "Nom produit uniquement"], answer: "Date et heure décongélation et fin" },
+                { question: "Combien de types de fromages proposés ?", options: ["2", "3", "4", "5"], answer: "4" },
+                { question: "Ustensile obligatoire pour couper XXL ?", options: ["Couteau plastique", "Couteau céramique", "Couteau métal", "Ciseaux"], answer: "Couteau métal" },
+                { question: "Temps maximum cuisson steak haché ?", options: ["2 minutes", "3 minutes", "4 minutes", "5 minutes"], answer: "4 minutes" },
+                { question: "Fréquence nettoyage grill et friteuses ?", options: ["Tous les jours", "Toutes les 2 heures", "Une fois par semaine", "Toutes les 4 heures"], answer: "Tous les jours" },
+                { question: "Stockage sauces ouvertes au frigo ?", options: ["Sans couvercle", "Récipient fermé", "Emballage origine", "Température ambiante"], answer: "Récipient fermé" },
+                { question: "Ingrédient principal du tacos végétarien ?", options: ["Poulet", "Steak haché", "Falafel", "Fromage seul"], answer: "Falafel" },
+                { question: "Nombre maximum de sauces dans un tacos ?", options: ["1", "2", "3", "4"], answer: "3" },
+                { question: "Signal remplacement huile de friture ?", options: ["Changement couleur", "Émission odeur", "Mousse excessive", "Toutes réponses"], answer: "Toutes réponses" },
+                { question: "Comment vérifier température aliments ?", options: ["À l'oeil", "Avec thermomètre", "Au toucher", "Avec timer"], answer: "Avec thermomètre" },
+                { question: "Type de gants pour aliments chauds ?", options: ["Gants latex", "Gants résistants chaleur", "Gants coton", "Pas de gants"], answer: "Gants résistants chaleur" },
+                { question: "Fréquence vidage poubelles cuisine ?", options: ["Une fois par jour", "Dès qu'elles sont pleines", "Toutes les 2 heures", "Toutes les 4 heures"], answer: "Dès qu'elles sont pleines" },
+                { question: "Disposition aliments dans frigo ?", options: ["Tout mélangé", "Crus au-dessus cuits", "Crus en dessous cuits", "Pas importance"], answer: "Crus en dessous cuits" },
+                { question: "Délai maximal préparation vente garniture chaude ?", options: ["1 heure", "2 heures", "3 heures", "4 heures"], answer: "2 heures" },
+                { question: "Type nettoyage obligatoire après service ?", options: ["Nettoyage humide", "Nettoyage sec", "Désinfection complète", "Rinçage rapide"], answer: "Désinfection complète" },
+                { question: "Rôle principal du manager en cuisine ?", options: ["Cuisiner uniquement", "Contrôler stocks et propreté", "Servir clients", "Faire comptabilité"], answer: "Contrôler stocks et propreté" },
+                { question: "Produit à ne jamais recongeler ?", options: ["Légumes", "Steak haché", "Pain", "Fromage"], answer: "Steak haché" },
+                { question: "Gestion réclamations clients ?", options: ["Ignorer", "Noter et informer manager", "Répondre agressivement", "Donner bon achat"], answer: "Noter et informer manager" },
+                { question: "Quand porter uniforme propre ?", options: ["Seulement matin", "Pendant tout service", "Seulement inspections", "Uniquement livraison"], answer: "Pendant tout service" },
+                { question: "Délai servir boisson fraîche ?", options: ["1 minute", "2 minutes", "5 minutes", "10 minutes"], answer: "2 minutes" },
+                { question: "Stockage viandes crues dans frigo ?", options: ["Bacs séparés", "Directement étagère", "Avec produits cuits", "À côté sauces"], answer: "Bacs séparés" }
+            ];
+
+            const [questions, setQuestions] = useState(() => {
+                const saved = localStorage.getItem('otacos-questions');
+                return saved ? JSON.parse(saved) : initialQuestions;
+            });
+
+            const [history, setHistory] = useState(() => {
+                const saved = localStorage.getItem('otacos-history');
+                return saved ? JSON.parse(saved) : [];
+            });
+
+            const [view, setView] = useState('home');
+            const [quizSize, setQuizSize] = useState(10);
+            const [currentQuiz, setCurrentQuiz] = useState([]);
+            const [currentQuestion, setCurrentQuestion] = useState(0);
+            const [answers, setAnswers] = useState([]);
+            const [quizResults, setQuizResults] = useState(null);
+            const [employeeName, setEmployeeName] = useState('');
+            const [restaurant, setRestaurant] = useState('');
+            const [showAddForm, setShowAddForm] = useState(false);
+            const [newQ, setNewQ] = useState({ question: '', options: ['', '', '', ''], answer: '' });
+
+            const restaurants = ['Louvain-La-Neuve', 'Auderghem', 'Uccle', 'Halle', 'Soignies', 'Ath', 'Renaix', 'Mouscron'];
+
+            useEffect(() => {
+                localStorage.setItem('otacos-questions', JSON.stringify(questions));
+            }, [questions]);
+
+            useEffect(() => {
+                localStorage.setItem('otacos-history', JSON.stringify(history));
+            }, [history]);
+
+            const generateQuiz = () => {
+                if (!employeeName || !restaurant) {
+                    alert('Veuillez renseigner le nom et le restaurant');
+                    return;
+                }
+                const shuffled = [...questions].sort(() => Math.random() - 0.5);
+                const selected = shuffled.slice(0, Math.min(quizSize, questions.length));
+                setCurrentQuiz(selected);
+                setCurrentQuestion(0);
+                setAnswers([]);
+                setQuizResults(null);
+                setView('quiz');
+            };
+
+            const handleAnswer = (answer) => {
+                const newAnswers = [...answers, answer];
+                setAnswers(newAnswers);
+                
+                if (currentQuestion < currentQuiz.length - 1) {
+                    setCurrentQuestion(currentQuestion + 1);
+                } else {
+                    const score = newAnswers.filter((ans, idx) => ans === currentQuiz[idx].answer).length;
+                    const percentage = Math.round((score / currentQuiz.length) * 100);
+                    
+                    const result = {
+                        employeeName,
+                        restaurant,
+                        date: new Date().toLocaleString('fr-BE'),
+                        score,
+                        total: currentQuiz.length,
+                        percentage,
+                        details: currentQuiz.map((q, idx) => ({
+                            question: q.question,
+                            userAnswer: newAnswers[idx],
+                            correctAnswer: q.answer,
+                            isCorrect: newAnswers[idx] === q.answer
+                        }))
+                    };
+                    
+                    setQuizResults(result);
+                    setHistory([result, ...history]);
+                    setView('results');
+                }
+            };
+
+            const addQuestion = (newQuestion) => {
+                setQuestions([...questions, newQuestion]);
+            };
+
+            const deleteQuestion = (index) => {
+                setQuestions(questions.filter((_, i) => i !== index));
+            };
+
+            const exportData = () => {
+                const data = { questions, history };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'otacos-quiz-backup.json';
+                a.click();
+            };
+
+            const importData = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const data = JSON.parse(event.target.result);
+                            if (data.questions) setQuestions(data.questions);
+                            if (data.history) setHistory(data.history);
+                            alert('Données importées avec succès !');
+                        } catch (error) {
+                            alert('Erreur importation');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+
+            if (view === 'home') {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-white rounded-lg shadow-2xl p-8 mb-6">
+                                <h1 className="text-4xl font-bold text-center text-orange-600 mb-2">Quiz Surprise O'Tacos</h1>
+                                <p className="text-center text-gray-600 mb-8">Groupe AMAUH - Contrôle des connaissances</p>
+                                
+                                <div className="grid md:grid-cols-2 gap-6 mb-8">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <User className="inline w-4 h-4 mr-1" /> Nom équipier
+                                        </label>
+                                        <input type="text" value={employeeName} onChange={(e) => setEmployeeName(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Prénom Nom" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <MapPin className="inline w-4 h-4 mr-1" /> Restaurant
+                                        </label>
+                                        <select value={restaurant} onChange={(e) => setRestaurant(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                                            <option value="">Sélectionner...</option>
+                                            {restaurants.map(r => <option key={r} value={r}>{r}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="bg-orange-50 rounded-lg p-6 mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-3">Nombre de questions</label>
+                                    <div className="flex gap-3">
+                                        {[5, 10, 15, 20].map(size => (
+                                            <button key={size} onClick={() => setQuizSize(size)} className={`px-6 py-3 rounded-lg font-semibold ${quizSize === size ? 'bg-orange-600 text-white' : 'bg-white text-gray-700'}`}>{size}</button>
+                                        ))}
+                                    </div>
+                                    <p className="text-sm text-gray-600 mt-3">Banque : {questions.length} questions</p>
+                                </div>
+
+                                <button onClick={generateQuiz} className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-4 rounded-lg font-bold text-lg flex items-center justify-center gap-2">
+                                    <Shuffle /> Générer Quiz
+                                </button>
+                            </div>
+
+                            <div className="grid md:grid-cols-3 gap-4">
+                                <button onClick={() => setView('manage')} className="bg-white p-6 rounded-lg shadow text-center">
+                                    <Edit2 className="w-8 h-8 mx-auto mb-2 text-orange-600" />
+                                    <p className="font-semibold">Gérer Questions</p>
+                                    <p className="text-sm text-gray-600">{questions.length}</p>
+                                </button>
+                                <button onClick={() => setView('history')} className="bg-white p-6 rounded-lg shadow text-center">
+                                    <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                                    <p className="font-semibold">Historique</p>
+                                    <p className="text-sm text-gray-600">{history.length}</p>
+                                </button>
+                                <button onClick={exportData} className="bg-white p-6 rounded-lg shadow text-center">
+                                    <Download className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                                    <p className="font-semibold">Sauvegarder</p>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (view === 'quiz') {
+                const q = currentQuiz[currentQuestion];
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4 flex items-center justify-center">
+                        <div className="max-w-3xl w-full bg-white rounded-lg shadow-2xl p-8">
+                            <div className="mb-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <span className="text-sm font-semibold text-gray-600">Question {currentQuestion + 1} / {currentQuiz.length}</span>
+                                    <span className="text-sm font-semibold text-orange-600">{employeeName} - {restaurant}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div className="bg-orange-600 h-2 rounded-full" style={{ width: `${((currentQuestion + 1) / currentQuiz.length) * 100}%` }} />
+                                </div>
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-800 mb-8">{q.question}</h2>
+                            <div className="space-y-3">
+                                {q.options.map((option, idx) => (
+                                    <button key={idx} onClick={() => handleAnswer(option)} className="w-full text-left p-4 rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 font-medium">
+                                        <span className="inline-block w-8 h-8 rounded-full bg-orange-100 text-orange-600 text-center leading-8 mr-3 font-bold">{String.fromCharCode(65 + idx)}</span>
+                                        {option}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (view === 'results') {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-white rounded-lg shadow-2xl p-8">
+                                <div className="text-center mb-8">
+                                    <div className={`inline-block p-4 rounded-full mb-4 ${quizResults.percentage >= 80 ? 'bg-green-100' : quizResults.percentage >= 60 ? 'bg-yellow-100' : 'bg-red-100'}`}>
+                                        {quizResults.percentage >= 80 ? <CheckCircle className="w-16 h-16 text-green-600" /> : <XCircle className="w-16 h-16 text-red-600" />}
+                                    </div>
+                                    <h2 className="text-3xl font-bold text-gray-800 mb-2">Résultats</h2>
+                                    <p className="text-gray-600">{quizResults.employeeName} - {quizResults.restaurant}</p>
+                                    <p className="text-sm text-gray-500">{quizResults.date}</p>
+                                </div>
+                                <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-lg p-8 mb-8 text-white text-center">
+                                    <div className="text-6xl font-bold mb-2">{quizResults.percentage}%</div>
+                                    <div className="text-xl">{quizResults.score} / {quizResults.total}</div>
+                                </div>
+                                <div className="space-y-4 mb-8">
+                                    {quizResults.details.map((detail, idx) => (
+                                        <div key={idx} className={`p-4 rounded-lg border-2 ${detail.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                            <div className="flex items-start gap-3">
+                                                {detail.isCorrect ? <CheckCircle className="w-6 h-6 text-green-600 mt-1" /> : <XCircle className="w-6 h-6 text-red-600 mt-1" />}
+                                                <div className="flex-1">
+                                                    <p className="font-semibold text-gray-800 mb-2">{detail.question}</p>
+                                                    <p className="text-sm text-gray-600">Réponse : {detail.userAnswer}</p>
+                                                    {!detail.isCorrect && <p className="text-sm text-green-700 font-medium mt-1">Correct : {detail.correctAnswer}</p>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex gap-4">
+                                    <button onClick={() => { setView('home'); setEmployeeName(''); setRestaurant(''); }} className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 text-white py-3 rounded-lg font-semibold">Nouveau Quiz</button>
+                                    <button onClick={() => setView('history')} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold">Historique</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (view === 'manage') {
+                return (
+                    <div className="min-h-screen bg-gray-50 p-4">
+                        <div className="max-w-6xl mx-auto">
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold">Questions ({questions.length})</h2>
+                                    <div className="flex gap-3">
+                                        <label className="bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer flex items-center gap-2">
+                                            <Upload className="w-5 h-5" /> Importer
+                                            <input type="file" accept=".json" onChange={importData} className="hidden" />
+                                        </label>
+                                        <button onClick={() => setShowAddForm(!showAddForm)} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                                            <Plus className="w-5 h-5" /> Ajouter
+                                        </button>
+                                        <button onClick={() => setView('home')} className="bg-gray-600 text-white px-4 py-2 rounded-lg">Retour</button>
+                                    </div>
+                                </div>
+                                {showAddForm && (
+                                    <div className="bg-orange-50 p-6 rounded-lg mb-6">
+                                        <h3 className="font-bold text-lg mb-4">Nouvelle Question</h3>
+                                        <input type="text" placeholder="Question" value={newQ.question} onChange={(e) => setNewQ({...newQ, question: e.target.value})} className="w-full px-4 py-2 border rounded-lg mb-3" />
+                                        {newQ.options.map((opt, idx) => (
+                                            <input key={idx} type="text" placeholder={`Option ${idx + 1}`} value={opt} onChange={(e) => { const newOpts = [...newQ.options]; newOpts[idx] = e.target.value; setNewQ({...newQ, options: newOpts}); }} className="w-full px-4 py-2 border rounded-lg mb-2" />
+                                        ))}
+                                        <select value={newQ.answer} onChange={(e) => setNewQ({...newQ, answer: e.target.value})} className="w-full px-4 py-2 border rounded-lg mb-3">
+                                            <option value="">Bonne réponse</option>
+                                            {newQ.options.filter(o => o).map((opt, idx) => <option key={idx} value={opt}>{opt}</option>)}
+                                        </select>
+                                        <button onClick={() => { if (newQ.question && newQ.options.every(o => o) && newQ.answer) { addQuestion(newQ); setNewQ({ question: '', options: ['', '', '', ''], answer: '' }); setShowAddForm(false); } else { alert('Remplir tous les champs'); } }} className="bg-green-600 text-white px-6 py-2 rounded-lg">Enregistrer</button>
+                                    </div>
+                                )}
+                                <div className="space-y-3 max-h-96 overflow-y-auto">
+                                    {questions.map((q, idx) => (
+                                        <div key={idx} className="border rounded-lg p-4">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <p className="font-semibold mb-2">{q.question}</p>
+                                                    <div className="text-sm text-gray-600">
