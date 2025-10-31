@@ -1,652 +1,336 @@
-import React, { useState } from 'react';
-import { Shuffle, Plus, Edit2, Trash2, Download, Upload, CheckCircle, XCircle, User, MapPin } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz O'Tacos - Groupe AMAUH</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #f97316 0%, #dc2626 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 30px; margin-bottom: 20px; }
+        h1 { color: #f97316; font-size: 2.5em; text-align: center; margin-bottom: 10px; }
+        h2 { color: #1f2937; font-size: 1.8em; margin-bottom: 20px; }
+        h3 { color: #374151; font-size: 1.3em; margin-bottom: 15px; }
+        .subtitle { text-align: center; color: #6b7280; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 0.9em; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 1em; }
+        input:focus, select:focus { outline: none; border-color: #f97316; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(135deg, #f97316, #dc2626); color: white; width: 100%; padding: 16px; font-size: 1.1em; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(249, 115, 22, 0.4); }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-secondary:hover { background: #4b5563; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-small { padding: 8px 16px; font-size: 0.9em; }
+        .quiz-size { background: #fff7ed; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .size-options { display: flex; gap: 12px; flex-wrap: wrap; }
+        .size-btn { padding: 12px 24px; border: 2px solid #fed7aa; background: white; color: #9a3412; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .size-btn.active { background: #f97316; color: white; border-color: #f97316; }
+        .option-btn { width: 100%; text-align: left; padding: 16px; margin-bottom: 12px; border: 2px solid #e5e7eb; background: white; border-radius: 8px; font-size: 1em; cursor: pointer; transition: all 0.2s; }
+        .option-btn:hover { border-color: #f97316; background: #fff7ed; }
+        .option-letter { display: inline-block; width: 32px; height: 32px; background: #fff7ed; color: #f97316; border-radius: 50%; text-align: center; line-height: 32px; font-weight: bold; margin-right: 12px; }
+        .progress-bar { width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+        .progress-fill { height: 100%; background: #f97316; transition: width 0.3s; }
+        .result-card { border-left: 4px solid #10b981; padding: 16px; margin-bottom: 12px; border-radius: 8px; }
+        .result-card.wrong { border-left-color: #ef4444; background: #fef2f2; }
+        .result-card.correct { background: #f0fdf4; }
+        .score-display { background: linear-gradient(135deg, #f97316, #dc2626); color: white; padding: 40px; border-radius: 12px; text-align: center; margin-bottom: 30px; }
+        .score-number { font-size: 4em; font-weight: bold; margin-bottom: 10px; }
+        .icon-card { text-align: center; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.3s; }
+        .icon-card:hover { transform: translateY(-5px); box-shadow: 0 5px 20px rgba(0,0,0,0.15); }
+        .icon { font-size: 3em; margin-bottom: 10px; }
+        .hidden { display: none; }
+        .question-list { max-height: 400px; overflow-y: auto; }
+        .question-item { border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; margin-bottom: 12px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .text-success { color: #10b981; font-weight: 600; }
+        .text-small { font-size: 0.9em; color: #6b7280; }
+        @media (max-width: 768px) { h1 { font-size: 2em; } .size-options { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="container" id="app"></div>
 
-const QuizApp = () => {
-  const initialQuestions = [
-    {
-      question: "Quelle est la température minimale requise pour le lavage des mains ?",
-      options: ["38 degrés", "25 degrés", "42 degrés", "50 degrés"],
-      answer: "38 degrés"
-    },
-    {
-      question: "Qu'est-ce qui est strictement interdit en cuisine ?",
-      options: ["Torchons et éponges", "Ustensiles en plastique", "Serviettes en papier", "Crayons alimentaires"],
-      answer: "Torchons et éponges"
-    },
-    {
-      question: "Quelle est la taille maximale du O'tacos ?",
-      options: ["M", "L", "XL", "Gigatacos"],
-      answer: "Gigatacos"
-    },
-    {
-      question: "Taux de composés polaires maximum dans l'huile de friture ?",
-      options: ["23%", "14%", "10%", "30%"],
-      answer: "23%"
-    },
-    {
-      question: "Contrôle température chambres froides par jour ?",
-      options: ["Une fois", "Deux fois", "Trois fois", "Toutes les heures"],
-      answer: "Deux fois"
-    },
-    {
-      question: "Temps maximum conservation produit décongelé au froid positif ?",
-      options: ["24 heures", "48 heures", "72 heures", "96 heures"],
-      answer: "72 heures"
-    },
-    {
-      question: "Ingrédient unique dans les O'tacos ?",
-      options: ["Sauce barbecue", "Sauce fromagère", "Moutarde", "Sauce ketchup"],
-      answer: "Sauce fromagère"
-    },
-    {
-      question: "Délai maximal entre commande et livraison ?",
-      options: ["2 minutes", "4 minutes", "6 minutes", "8 minutes"],
-      answer: "4 minutes"
-    },
-    {
-      question: "Comment étiqueter après décongélation ?",
-      options: [
-        "Date d'étiquetage",
-        "Date limite uniquement",
-        "Date et heure décongélation et fin consommation",
-        "Nom du produit uniquement"
-      ],
-      answer: "Date et heure décongélation et fin consommation"
-    },
-    {
-      question: "Combien de types de fromages proposés ?",
-      options: ["2", "3", "4", "5"],
-      answer: "4"
-    },
-    {
-      question: "Ustensile obligatoire pour couper les O'tacos XXL ?",
-      options: ["Couteau plastique", "Couteau céramique", "Couteau métal", "Ciseaux"],
-      answer: "Couteau métal"
-    },
-    {
-      question: "Temps maximum cuisson steak haché dans le grill ?",
-      options: ["2 minutes", "3 minutes", "4 minutes", "5 minutes"],
-      answer: "4 minutes"
-    },
-    {
-      question: "Fréquence nettoyage grill et friteuses ?",
-      options: ["Tous les jours", "Toutes les 2 heures", "Une fois par semaine", "Toutes les 4 heures"],
-      answer: "Tous les jours"
-    },
-    {
-      question: "Stockage sauces ouvertes au frigo ?",
-      options: ["Sans couvercle", "Récipient fermé", "Emballage origine", "Température ambiante"],
-      answer: "Récipient fermé"
-    },
-    {
-      question: "Ingrédient principal du tacos végétarien ?",
-      options: ["Poulet", "Steak haché", "Falafel", "Fromage seul"],
-      answer: "Falafel"
-    },
-    {
-      question: "Nombre maximum de sauces dans un O'tacos standard ?",
-      options: ["1", "2", "3", "4"],
-      answer: "3"
-    },
-    {
-      question: "Signal que l'huile de friture doit être remplacée ?",
-      options: ["Changement couleur", "Émission odeur", "Mousse excessive", "Toutes réponses"],
-      answer: "Toutes réponses"
-    },
-    {
-      question: "Comment vérifier température aliments réfrigérés ?",
-      options: ["À l'oeil", "Avec thermomètre", "Au toucher", "Avec timer"],
-      answer: "Avec thermomètre"
-    },
-    {
-      question: "Type de gants pour aliments chauds ?",
-      options: ["Gants latex", "Gants résistants chaleur", "Gants coton", "Pas de gants"],
-      answer: "Gants résistants chaleur"
-    },
-    {
-      question: "Fréquence vidage poubelles cuisine ?",
-      options: ["Une fois par jour", "Dès qu'elles sont pleines", "Toutes les 2 heures", "Toutes les 4 heures"],
-      answer: "Dès qu'elles sont pleines"
-    },
-    {
-      question: "Disposition aliments dans frigo ?",
-      options: [
-        "Tout mélangé",
-        "Crus au-dessus des cuits",
-        "Crus en dessous des cuits",
-        "Pas d'importance"
-      ],
-      answer: "Crus en dessous des cuits"
-    },
-    {
-      question: "Délai maximal préparation et vente garniture chaude ?",
-      options: ["1 heure", "2 heures", "3 heures", "4 heures"],
-      answer: "2 heures"
-    },
-    {
-      question: "Type de nettoyage obligatoire après service ?",
-      options: ["Nettoyage humide", "Nettoyage sec", "Désinfection complète", "Rinçage rapide"],
-      answer: "Désinfection complète"
-    },
-    {
-      question: "Rôle principal du manager en cuisine ?",
-      options: ["Cuisiner uniquement", "Contrôler stocks et propreté", "Servir clients", "Faire comptabilité"],
-      answer: "Contrôler stocks et propreté"
-    },
-    {
-      question: "Produit à ne jamais recongeler ?",
-      options: ["Légumes", "Steak haché", "Pain", "Fromage"],
-      answer: "Steak haché"
-    },
-    {
-      question: "Gestion réclamations clients sur place ?",
-      options: ["Ignorer", "Noter et informer manager", "Répondre agressivement", "Donner bon achat"],
-      answer: "Noter et informer manager"
-    },
-    {
-      question: "Quand porter uniforme propre ?",
-      options: ["Seulement matin", "Pendant tout service", "Seulement inspections", "Uniquement livraison"],
-      answer: "Pendant tout service"
-    },
-    {
-      question: "Délai maximal pour servir boisson fraîche ?",
-      options: ["1 minute", "2 minutes", "5 minutes", "10 minutes"],
-      answer: "2 minutes"
-    },
-    {
-      question: "Stockage viandes crues dans frigo ?",
-      options: [
-        "Bacs séparés",
-        "Directement étagère",
-        "Avec produits cuits",
-        "À côté sauces"
-      ],
-      answer: "Bacs séparés"
-    }
-  ];
+    <script>
+        const questions = [
+            { question: "Quelle est la température minimale requise pour le lavage des mains ?", options: ["38°C", "25°C", "42°C", "50°C"], answer: "38°C" },
+            { question: "Qu'est-ce qui est strictement interdit en cuisine ?", options: ["Torchons et éponges", "Ustensiles en plastique", "Serviettes en papier", "Crayons alimentaires"], answer: "Torchons et éponges" },
+            { question: "Quelle est la taille maximale du O'tacos ?", options: ["M", "L", "XL", "Gigatacos"], answer: "Gigatacos" },
+            { question: "Taux de composés polaires maximum dans l'huile ?", options: ["23%", "14%", "10%", "30%"], answer: "23%" },
+            { question: "Contrôle température chambres froides par jour ?", options: ["Une fois", "Deux fois", "Trois fois", "Toutes les heures"], answer: "Deux fois" },
+            { question: "Temps maximum conservation produit décongelé ?", options: ["24 heures", "48 heures", "72 heures", "96 heures"], answer: "72 heures" },
+            { question: "Ingrédient unique dans les O'tacos ?", options: ["Sauce barbecue", "Sauce fromagère", "Moutarde", "Sauce ketchup"], answer: "Sauce fromagère" },
+            { question: "Délai maximal entre commande et livraison ?", options: ["2 minutes", "4 minutes", "6 minutes", "8 minutes"], answer: "4 minutes" },
+            { question: "Comment étiqueter après décongélation ?", options: ["Date étiquetage", "Date limite uniquement", "Date et heure décongélation et fin", "Nom produit uniquement"], answer: "Date et heure décongélation et fin" },
+            { question: "Combien de types de fromages proposés ?", options: ["2", "3", "4", "5"], answer: "4" },
+            { question: "Ustensile obligatoire pour couper XXL ?", options: ["Couteau plastique", "Couteau céramique", "Couteau métal", "Ciseaux"], answer: "Couteau métal" },
+            { question: "Temps maximum cuisson steak haché ?", options: ["2 minutes", "3 minutes", "4 minutes", "5 minutes"], answer: "4 minutes" },
+            { question: "Fréquence nettoyage grill et friteuses ?", options: ["Tous les jours", "Toutes les 2h", "Une fois par semaine", "Toutes les 4h"], answer: "Tous les jours" },
+            { question: "Stockage sauces ouvertes au frigo ?", options: ["Sans couvercle", "Récipient fermé", "Emballage origine", "Température ambiante"], answer: "Récipient fermé" },
+            { question: "Ingrédient principal du tacos végétarien ?", options: ["Poulet", "Steak haché", "Falafel", "Fromage seul"], answer: "Falafel" },
+            { question: "Nombre maximum de sauces dans un tacos ?", options: ["1", "2", "3", "4"], answer: "3" },
+            { question: "Signal remplacement huile de friture ?", options: ["Changement couleur", "Émission odeur", "Mousse excessive", "Toutes ces réponses"], answer: "Toutes ces réponses" },
+            { question: "Comment vérifier température aliments ?", options: ["À l'oeil", "Avec thermomètre", "Au toucher", "Avec timer"], answer: "Avec thermomètre" },
+            { question: "Type de gants pour aliments chauds ?", options: ["Gants latex", "Gants résistants chaleur", "Gants coton", "Pas de gants"], answer: "Gants résistants chaleur" },
+            { question: "Fréquence vidage poubelles cuisine ?", options: ["Une fois par jour", "Dès qu'elles sont pleines", "Toutes les 2h", "Toutes les 4h"], answer: "Dès qu'elles sont pleines" },
+            { question: "Disposition aliments dans frigo ?", options: ["Tout mélangé", "Crus au-dessus cuits", "Crus en dessous cuits", "Pas importance"], answer: "Crus en dessous cuits" },
+            { question: "Délai maximal préparation vente garniture chaude ?", options: ["1 heure", "2 heures", "3 heures", "4 heures"], answer: "2 heures" },
+            { question: "Type nettoyage obligatoire après service ?", options: ["Nettoyage humide", "Nettoyage sec", "Désinfection complète", "Rinçage rapide"], answer: "Désinfection complète" },
+            { question: "Rôle principal du manager en cuisine ?", options: ["Cuisiner uniquement", "Contrôler stocks et propreté", "Servir clients", "Comptabilité"], answer: "Contrôler stocks et propreté" },
+            { question: "Produit à ne jamais recongeler ?", options: ["Légumes", "Steak haché", "Pain", "Fromage"], answer: "Steak haché" },
+            { question: "Gestion réclamations clients ?", options: ["Ignorer", "Noter et informer manager", "Répondre agressivement", "Donner bon achat"], answer: "Noter et informer manager" },
+            { question: "Quand porter uniforme propre ?", options: ["Seulement matin", "Pendant tout service", "Seulement inspections", "Uniquement livraison"], answer: "Pendant tout service" },
+            { question: "Délai servir boisson fraîche ?", options: ["1 minute", "2 minutes", "5 minutes", "10 minutes"], answer: "2 minutes" },
+            { question: "Stockage viandes crues ?", options: ["Bacs séparés", "Directement étagère", "Avec produits cuits", "À côté sauces"], answer: "Bacs séparés" }
+        ];
 
-  const [questions, setQuestions] = useState(initialQuestions);
-  const [view, setView] = useState('home');
-  const [quizSize, setQuizSize] = useState(10);
-  const [currentQuiz, setCurrentQuiz] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [quizResults, setQuizResults] = useState(null);
-  const [employeeName, setEmployeeName] = useState('');
-  const [restaurant, setRestaurant] = useState('');
-  const [history, setHistory] = useState([]);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newQ, setNewQ] = useState({ question: '', options: ['', '', '', ''], answer: '' });
+        const restaurants = ['Louvain-La-Neuve', 'Auderghem', 'Uccle', 'Halle', 'Soignies', 'Ath', 'Renaix', 'Mouscron'];
 
-  const restaurants = ['Braine-le-Château', 'Nivelles', 'Waterloo', 'Wavre', 'Autre'];
+        let state = {
+            view: 'home',
+            employeeName: '',
+            restaurant: '',
+            quizSize: 10,
+            currentQuiz: [],
+            currentQuestion: 0,
+            answers: [],
+            history: JSON.parse(localStorage.getItem('otacos-history') || '[]')
+        };
 
-  const generateQuiz = () => {
-    if (!employeeName || !restaurant) {
-      alert('Veuillez renseigner le nom et le restaurant');
-      return;
-    }
-    
-    const shuffled = [...questions].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, Math.min(quizSize, questions.length));
-    setCurrentQuiz(selected);
-    setCurrentQuestion(0);
-    setAnswers([]);
-    setQuizResults(null);
-    setView('quiz');
-  };
-
-  const handleAnswer = (answer) => {
-    const newAnswers = [...answers, answer];
-    setAnswers(newAnswers);
-    
-    if (currentQuestion < currentQuiz.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      const score = newAnswers.filter((ans, idx) => ans === currentQuiz[idx].answer).length;
-      const percentage = Math.round((score / currentQuiz.length) * 100);
-      
-      const result = {
-        employeeName,
-        restaurant,
-        date: new Date().toLocaleString('fr-BE'),
-        score,
-        total: currentQuiz.length,
-        percentage,
-        details: currentQuiz.map((q, idx) => ({
-          question: q.question,
-          userAnswer: newAnswers[idx],
-          correctAnswer: q.answer,
-          isCorrect: newAnswers[idx] === q.answer
-        }))
-      };
-      
-      setQuizResults(result);
-      setHistory([result, ...history]);
-      setView('results');
-    }
-  };
-
-  const addQuestion = (newQuestion) => {
-    setQuestions([...questions, newQuestion]);
-  };
-
-  const deleteQuestion = (index) => {
-    setQuestions(questions.filter((_, i) => i !== index));
-  };
-
-  const exportData = () => {
-    const data = { questions, history };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'otacos-quiz-backup.json';
-    a.click();
-  };
-
-  const importData = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const data = JSON.parse(event.target.result);
-          if (data.questions) setQuestions(data.questions);
-          if (data.history) setHistory(data.history);
-          alert('Données importées avec succès !');
-        } catch (error) {
-          alert('Erreur importation');
+        function render() {
+            const app = document.getElementById('app');
+            if (state.view === 'home') app.innerHTML = renderHome();
+            else if (state.view === 'quiz') app.innerHTML = renderQuiz();
+            else if (state.view === 'results') app.innerHTML = renderResults();
+            else if (state.view === 'history') app.innerHTML = renderHistory();
         }
-      };
-      reader.readAsText(file);
-    }
-  };
 
-  if (view === 'home') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-2xl p-8 mb-6">
-            <h1 className="text-4xl font-bold text-center text-orange-600 mb-2">
-              Quiz Surprise O'Tacos
-            </h1>
-            <p className="text-center text-gray-600 mb-8">Groupe AMAUH - Contrôle des connaissances</p>
+        function renderHome() {
+            return `
+                <div class="card">
+                    <h1>🌮 Quiz O'Tacos</h1>
+                    <p class="subtitle">Groupe AMAUH - Contrôle des connaissances terrain</p>
+                    
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Nom de l'équipier</label>
+                            <input type="text" id="employeeName" placeholder="Prénom Nom" value="${state.employeeName}">
+                        </div>
+                        <div class="form-group">
+                            <label>Restaurant</label>
+                            <select id="restaurant">
+                                <option value="">Sélectionner...</option>
+                                ${restaurants.map(r => `<option value="${r}" ${state.restaurant === r ? 'selected' : ''}>${r}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="quiz-size">
+                        <label>Nombre de questions pour le quiz</label>
+                        <div class="size-options">
+                            ${[5, 10, 15, 20].map(size => `
+                                <button class="size-btn ${state.quizSize === size ? 'active' : ''}" onclick="setQuizSize(${size})">${size}</button>
+                            `).join('')}
+                        </div>
+                        <p class="text-small" style="margin-top: 10px;">Banque actuelle : ${questions.length} questions</p>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="startQuiz()">🎲 Générer un Quiz Aléatoire</button>
+                </div>
+
+                <div class="grid">
+                    <div class="icon-card" onclick="state.view='history'; render();">
+                        <div class="icon">📊</div>
+                        <h3>Historique</h3>
+                        <p class="text-small">${state.history.length} quiz réalisés</p>
+                    </div>
+                    <div class="icon-card" onclick="exportData()">
+                        <div class="icon">💾</div>
+                        <h3>Sauvegarder</h3>
+                        <p class="text-small">Export JSON</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderQuiz() {
+            const q = state.currentQuiz[state.currentQuestion];
+            const progress = ((state.currentQuestion + 1) / state.currentQuiz.length) * 100;
             
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <User className="inline w-4 h-4 mr-1" />
-                  Nom équipier
-                </label>
-                <input
-                  type="text"
-                  value={employeeName}
-                  onChange={(e) => setEmployeeName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  placeholder="Prénom Nom"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="inline w-4 h-4 mr-1" />
-                  Restaurant
-                </label>
-                <select
-                  value={restaurant}
-                  onChange={(e) => setRestaurant(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Sélectionner...</option>
-                  {restaurants.map(r => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="bg-orange-50 rounded-lg p-6 mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Nombre de questions
-              </label>
-              <div className="flex gap-3">
-                {[5, 10, 15, 20].map(size => (
-                  <button
-                    key={size}
-                    onClick={() => setQuizSize(size)}
-                    className={`px-6 py-3 rounded-lg font-semibold ${
-                      quizSize === size
-                        ? 'bg-orange-600 text-white'
-                        : 'bg-white text-gray-700'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-              <p className="text-sm text-gray-600 mt-3">
-                Banque : {questions.length} questions
-              </p>
-            </div>
-
-            <button
-              onClick={generateQuiz}
-              className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-4 rounded-lg font-bold text-lg flex items-center justify-center gap-2"
-            >
-              <Shuffle className="w-6 h-6" />
-              Générer Quiz
-            </button>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-4">
-            <button
-              onClick={() => setView('manage')}
-              className="bg-white p-6 rounded-lg shadow text-center"
-            >
-              <Edit2 className="w-8 h-8 mx-auto mb-2 text-orange-600" />
-              <p className="font-semibold">Gérer Questions</p>
-              <p className="text-sm text-gray-600">{questions.length}</p>
-            </button>
-
-            <button
-              onClick={() => setView('history')}
-              className="bg-white p-6 rounded-lg shadow text-center"
-            >
-              <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-600" />
-              <p className="font-semibold">Historique</p>
-              <p className="text-sm text-gray-600">{history.length}</p>
-            </button>
-
-            <button
-              onClick={exportData}
-              className="bg-white p-6 rounded-lg shadow text-center"
-            >
-              <Download className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-              <p className="font-semibold">Sauvegarder</p>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (view === 'quiz') {
-    const q = currentQuiz[currentQuestion];
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4 flex items-center justify-center">
-        <div className="max-w-3xl w-full bg-white rounded-lg shadow-2xl p-8">
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-sm font-semibold text-gray-600">
-                Question {currentQuestion + 1} / {currentQuiz.length}
-              </span>
-              <span className="text-sm font-semibold text-orange-600">
-                {employeeName} - {restaurant}
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-orange-600 h-2 rounded-full"
-                style={{ width: `${((currentQuestion + 1) / currentQuiz.length) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          <h2 className="text-2xl font-bold text-gray-800 mb-8">{q.question}</h2>
-
-          <div className="space-y-3">
-            {q.options.map((option, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleAnswer(option)}
-                className="w-full text-left p-4 rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 font-medium"
-              >
-                <span className="inline-block w-8 h-8 rounded-full bg-orange-100 text-orange-600 text-center leading-8 mr-3 font-bold">
-                  {String.fromCharCode(65 + idx)}
-                </span>
-                {option}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (view === 'results') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-2xl p-8">
-            <div className="text-center mb-8">
-              <div className={`inline-block p-4 rounded-full mb-4 ${
-                quizResults.percentage >= 80 ? 'bg-green-100' : 
-                quizResults.percentage >= 60 ? 'bg-yellow-100' : 'bg-red-100'
-              }`}>
-                {quizResults.percentage >= 80 ? 
-                  <CheckCircle className="w-16 h-16 text-green-600" /> :
-                  <XCircle className="w-16 h-16 text-red-600" />
-                }
-              </div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                Résultats
-              </h2>
-              <p className="text-gray-600">{quizResults.employeeName} - {quizResults.restaurant}</p>
-              <p className="text-sm text-gray-500">{quizResults.date}</p>
-            </div>
-
-            <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-lg p-8 mb-8 text-white text-center">
-              <div className="text-6xl font-bold mb-2">{quizResults.percentage}%</div>
-              <div className="text-xl">{quizResults.score} / {quizResults.total}</div>
-            </div>
-
-            <div className="space-y-4 mb-8">
-              {quizResults.details.map((detail, idx) => (
-                <div key={idx} className={`p-4 rounded-lg border-2 ${
-                  detail.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                }`}>
-                  <div className="flex items-start gap-3">
-                    {detail.isCorrect ? 
-                      <CheckCircle className="w-6 h-6 text-green-600 mt-1" /> :
-                      <XCircle className="w-6 h-6 text-red-600 mt-1" />
-                    }
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800 mb-2">{detail.question}</p>
-                      <p className="text-sm text-gray-600">
-                        Réponse : {detail.userAnswer}
-                      </p>
-                      {!detail.isCorrect && (
-                        <p className="text-sm text-green-700 font-medium mt-1">
-                          Correct : {detail.correctAnswer}
-                        </p>
-                      )}
+            return `
+                <div class="card">
+                    <div class="flex-between" style="margin-bottom: 15px;">
+                        <span style="font-weight: 600; color: #6b7280;">Question ${state.currentQuestion + 1} / ${state.currentQuiz.length}</span>
+                        <span style="font-weight: 600; color: #f97316;">${state.employeeName}</span>
                     </div>
-                  </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                    
+                    <h2>${q.question}</h2>
+                    
+                    <div>
+                        ${q.options.map((opt, idx) => `
+                            <button class="option-btn" onclick="answerQuestion('${opt.replace(/'/g, "\\'")}')">
+                                <span class="option-letter">${String.fromCharCode(65 + idx)}</span>
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
                 </div>
-              ))}
-            </div>
+            `;
+        }
 
-            <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  setView('home');
-                  setEmployeeName('');
-                  setRestaurant('');
-                }}
-                className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 text-white py-3 rounded-lg font-semibold"
-              >
-                Nouveau Quiz
-              </button>
-              <button
-                onClick={() => setView('history')}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold"
-              >
-                Historique
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (view === 'manage') {
-    return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Questions ({questions.length})</h2>
-              <div className="flex gap-3">
-                <label className="bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer flex items-center gap-2">
-                  <Upload className="w-5 h-5" />
-                  Importer
-                  <input type="file" accept=".json" onChange={importData} className="hidden" />
-                </label>
-                <button
-                  onClick={() => setShowAddForm(!showAddForm)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  Ajouter
-                </button>
-                <button
-                  onClick={() => setView('home')}
-                  className="bg-gray-600 text-white px-4 py-2 rounded-lg"
-                >
-                  Retour
-                </button>
-              </div>
-            </div>
-
-            {showAddForm && (
-              <div className="bg-orange-50 p-6 rounded-lg mb-6">
-                <h3 className="font-bold text-lg mb-4">Nouvelle Question</h3>
-                <input
-                  type="text"
-                  placeholder="Question"
-                  value={newQ.question}
-                  onChange={(e) => setNewQ({...newQ, question: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg mb-3"
-                />
-                {newQ.options.map((opt, idx) => (
-                  <input
-                    key={idx}
-                    type="text"
-                    placeholder={`Option ${idx + 1}`}
-                    value={opt}
-                    onChange={(e) => {
-                      const newOpts = [...newQ.options];
-                      newOpts[idx] = e.target.value;
-                      setNewQ({...newQ, options: newOpts});
-                    }}
-                    className="w-full px-4 py-2 border rounded-lg mb-2"
-                  />
-                ))}
-                <select
-                  value={newQ.answer}
-                  onChange={(e) => setNewQ({...newQ, answer: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg mb-3"
-                >
-                  <option value="">Bonne réponse</option>
-                  {newQ.options.filter(o => o).map((opt, idx) => (
-                    <option key={idx} value={opt}>{opt}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => {
-                    if (newQ.question && newQ.options.every(o => o) && newQ.answer) {
-                      addQuestion(newQ);
-                      setNewQ({ question: '', options: ['', '', '', ''], answer: '' });
-                      setShowAddForm(false);
-                    } else {
-                      alert('Remplir tous les champs');
-                    }
-                  }}
-                  className="bg-green-600 text-white px-6 py-2 rounded-lg"
-                >
-                  Enregistrer
-                </button>
-              </div>
-            )}
-
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {questions.map((q, idx) => (
-                <div key={idx} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <p className="font-semibold mb-2">{q.question}</p>
-                      <div className="text-sm text-gray-600">
-                        {q.options.map((opt, i) => (
-                          <p key={i} className={opt === q.answer ? 'text-green-600 font-medium' : ''}>
-                            {String.fromCharCode(65 + i)}) {opt} {opt === q.answer && '✓'}
-                          </p>
-                        ))}
-                      </div>
+        function renderResults() {
+            const r = state.results;
+            const icon = r.percentage >= 80 ? '✅' : r.percentage >= 60 ? '⚠️' : '❌';
+            
+            return `
+                <div class="card">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="font-size: 5em; margin-bottom: 20px;">${icon}</div>
+                        <h1 style="margin-bottom: 10px;">Résultats du Quiz</h1>
+                        <p style="color: #6b7280; font-size: 1.1em;">${r.employeeName} - ${r.restaurant}</p>
+                        <p class="text-small">${r.date}</p>
                     </div>
-                    <button
-                      onClick={() => deleteQuestion(idx)}
-                      className="text-red-600 p-2"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
+
+                    <div class="score-display">
+                        <div class="score-number">${r.percentage}%</div>
+                        <div style="font-size: 1.3em;">${r.score} / ${r.total} bonnes réponses</div>
+                    </div>
+
+                    <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+                        ${r.details.map(d => `
+                            <div class="result-card ${d.isCorrect ? 'correct' : 'wrong'}">
+                                <div style="display: flex; gap: 15px;">
+                                    <div style="font-size: 1.5em;">${d.isCorrect ? '✅' : '❌'}</div>
+                                    <div style="flex: 1;">
+                                        <p style="font-weight: 600; margin-bottom: 8px;">${d.question}</p>
+                                        <p class="text-small">Réponse donnée : ${d.userAnswer}</p>
+                                        ${!d.isCorrect ? `<p class="text-success" style="margin-top: 5px;">Bonne réponse : ${d.correctAnswer}</p>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="grid">
+                        <button class="btn btn-primary" onclick="resetQuiz()">Nouveau Quiz</button>
+                        <button class="btn btn-secondary" onclick="state.view='history'; render();">Voir l'Historique</button>
+                    </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+            `;
+        }
 
-  if (view === 'history') {
-    return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Historique ({history.length})</h2>
-              <button
-                onClick={() => setView('home')}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg"
-              >
-                Retour
-              </button>
-            </div>
-
-            {history.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">Aucun quiz</p>
-            ) : (
-              <div className="space-y-4">
-                {history.map((result, idx) => (
-                  <div key={idx} className="border rounded-lg p-6">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-bold text-lg">{result.employeeName}</h3>
-                        <p className="text-sm text-gray-600">{result.restaurant} - {result.date}</p>
-                      </div>
-                      <div className={`text-3xl font-bold ${
-                        result.percentage >= 80 ? 'text-green-600' :
-                        result.percentage >= 60 ? 'text-yellow-600' : 'text-red-600'
-                      }`}>
-                        {result.percentage}%
-                      </div>
+        function renderHistory() {
+            return `
+                <div class="card">
+                    <div class="flex-between" style="margin-bottom: 20px;">
+                        <h2>Historique des Quiz (${state.history.length})</h2>
+                        <button class="btn btn-secondary btn-small" onclick="state.view='home'; render();">Retour</button>
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">
-                      {result.score} / {result.total} réponses correctes
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  return null;
-};
+                    ${state.history.length === 0 ? 
+                        '<p style="text-align: center; color: #6b7280; padding: 40px;">Aucun quiz réalisé pour le moment</p>' :
+                        state.history.map(h => `
+                            <div class="question-item">
+                                <div class="flex-between">
+                                    <div>
+                                        <h3>${h.employeeName}</h3>
+                                        <p class="text-small">${h.restaurant} - ${h.date}</p>
+                                        <p class="text-small" style="margin-top: 5px;">${h.score} / ${h.total} réponses correctes</p>
+                                    </div>
+                                    <div style="font-size: 2em; font-weight: bold; color: ${h.percentage >= 80 ? '#10b981' : h.percentage >= 60 ? '#f59e0b' : '#ef4444'};">
+                                        ${h.percentage}%
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')
+                    }
+                </div>
+            `;
+        }
 
-export default QuizApp;
+        function setQuizSize(size) {
+            state.quizSize = size;
+            render();
+        }
+
+        function startQuiz() {
+            state.employeeName = document.getElementById('employeeName').value;
+            state.restaurant = document.getElementById('restaurant').value;
+
+            if (!state.employeeName || !state.restaurant) {
+                alert('Veuillez renseigner le nom et le restaurant');
+                return;
+            }
+
+            const shuffled = [...questions].sort(() => Math.random() - 0.5);
+            state.currentQuiz = shuffled.slice(0, state.quizSize);
+            state.currentQuestion = 0;
+            state.answers = [];
+            state.view = 'quiz';
+            render();
+        }
+
+        function answerQuestion(answer) {
+            state.answers.push(answer);
+            
+            if (state.currentQuestion < state.currentQuiz.length - 1) {
+                state.currentQuestion++;
+                render();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            const score = state.answers.filter((ans, idx) => ans === state.currentQuiz[idx].answer).length;
+            const percentage = Math.round((score / state.currentQuiz.length) * 100);
+            
+            state.results = {
+                employeeName: state.employeeName,
+                restaurant: state.restaurant,
+                date: new Date().toLocaleString('fr-BE'),
+                score,
+                total: state.currentQuiz.length,
+                percentage,
+                details: state.currentQuiz.map((q, idx) => ({
+                    question: q.question,
+                    userAnswer: state.answers[idx],
+                    correctAnswer: q.answer,
+                    isCorrect: state.answers[idx] === q.answer
+                }))
+            };
+            
+            state.history.unshift(state.results);
+            localStorage.setItem('otacos-history', JSON.stringify(state.history));
+            state.view = 'results';
+            render();
+        }
+
+        function resetQuiz() {
+            state.view = 'home';
+            state.employeeName = '';
+            state.restaurant = '';
+            render();
+        }
+
+        function exportData() {
+            const data = { questions, history: state.history };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'otacos-quiz-backup.json';
+            a.click();
+        }
+
+        render();
+    </script>
+</body>
+</html>
